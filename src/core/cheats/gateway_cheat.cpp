@@ -41,7 +41,10 @@ static inline std::enable_if_t<std::is_integral_v<T>> WriteOp(const GatewayCheat
     T val = read_func(addr);
     if (val != static_cast<T>(line.value)) {
         write_func(addr, static_cast<T>(line.value));
-        system.InvalidateCacheRange(addr, sizeof(T));
+        // ARM64 dynarmic InvalidateCacheRange bug workaround: full cache clear on cheat write
+        for (u32 i = 0; i < system.GetNumCores(); ++i) {
+            system.GetCore(i).ClearInstructionCache();
+        }
     }
 }
 
